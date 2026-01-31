@@ -4,10 +4,10 @@ import { NextResponse } from 'next/server';
 // Proxies to the Express server to keep the client code simple
 export async function GET() {
   try {
-    const resp = await fetch('http://localhost:4000/api/cases');
+    const resp = await fetch('https://nivaaran-q9op.onrender.com/api/cases');
     if (!resp.ok) {
       // Fallback to legacy path if alias not available
-      const legacy = await fetch('http://localhost:4000/cases');
+      const legacy = await fetch('https://nivaaran-q9op.onrender.com/cases');
       if (!legacy.ok) {
         const text = await legacy.text();
         return NextResponse.json({ error: text }, { status: legacy.status });

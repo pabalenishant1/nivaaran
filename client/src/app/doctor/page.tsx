@@ -62,7 +62,7 @@ export default function DoctorDashboard() {
     if (!selectedCase) return;
     setIsSaving(true);
     try {
-      const response = await fetch('http://localhost:4000/doctor-notes', {
+      const response = await fetch('https://nivaaran-q9op.onrender.com/doctor-notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
