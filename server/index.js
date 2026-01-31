@@ -5,9 +5,10 @@ const { createWorker } = require('tesseract.js');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+require('dotenv').config();
 
 const app = express();
-const PORT = 4000;
+const PORT = process.env.PORT || 4000;
 
 // Middleware
 app.use(cors());
@@ -25,26 +26,68 @@ const upload = multer({ dest: 'uploads/' });
 // In-Memory Store (Single Source of Truth)
 let cases = [];
 
-// Mock AI Function (Replace with OpenAI call later)
-const generateMockSummary = (patientData, ocrText) => {
-    const { age, gender, complaint, duration, history, language } = patientData;
-    
-    // Simulate processing delay
-    return `
-**Patient Summary**
-- **Demographics**: ${age} years, ${gender}
-- **Language**: ${language}
-- **Chief Complaint**: ${complaint} (${duration})
-- **History**: ${history}
-
-**OCR Extraction**:
-${ocrText ? ocrText.substring(0, 100) + (ocrText.length > 100 ? '...' : '') : 'No readable text found.'}
-
-**AI Assessment (MOCK)**:
-Patient presents with ${complaint} for ${duration}. History of ${history}.
-Recommended to check vitals and consider standard protocol for these symptoms.
-    `.trim();
-};
+async function generateAISummary(patientData, ocrText) {
+  const text = String(ocrText || '');
+  const lines = text.split(/\r?\n/);
+  const indicators = /(Tab\.|TAB\.|Cap\.|CAP\.|Tablet|Capsule|Syrup|Inj)\b/;
+  const dosage = /\b(\d{2,4})\s*(mg|ml)\b/i;
+  const numbered = /^\s*\d+[\.\)]\s+/;
+  const freqNoise = new Set(['rx','tid','bid','od','sos','hs','po','im','iv','qhs','prn']);
+  const blacklist = [
+    'road','center','hospital','pune','phase','mg','business',
+    'morning','night','days','after','food','before','tot',
+    'reg','no','date','age','gender','weight','height'
+  ];
+  const set = new Set();
+  const isBlacklisted = (name) => {
+    const tokens = String(name).toLowerCase().split(/\s+/);
+    return tokens.some(t => blacklist.includes(t));
+  };
+  const pushName = (raw) => {
+    const name = String(raw).replace(/[^A-Za-z\- ]/g,'').trim();
+    if (!name) return;
+    if (isBlacklisted(name)) return;
+    if (freqNoise.has(name.toLowerCase())) return;
+    set.add(name);
+  };
+  for (const line of lines) {
+    const hasIndicator = indicators.test(line);
+    const hasDosage = dosage.test(line);
+    const isNumbered = numbered.test(line);
+    if (hasIndicator) {
+      const indMatches = [...line.matchAll(/(?:Tab\.|TAB\.|Cap\.|CAP\.|Tablet|Capsule|Syrup|Inj)\s+([A-Za-z][A-Za-z\-]+(?:\s+[A-Za-z][A-Za-z\-]+)*)/g)];
+      for (const m of indMatches) pushName(m[1]);
+    }
+    if (hasDosage) {
+      const doseMatches = [...line.matchAll(/([A-Za-z][A-Za-z\-]+(?:\s+[A-Za-z][A-Za-z\-]+)*)\s+\d{2,4}\s*(mg|ml)\b/gi)];
+      for (const m of doseMatches) pushName(m[1]);
+    }
+    if (isNumbered) {
+      const numberedCaps = [...line.matchAll(/\b([A-Z][a-zA-Z\-]+(?:\s+[A-Z][a-zA-Z\-]+)*)\b/g)];
+      if (numberedCaps.length) pushName(numberedCaps[0][1]);
+    }
+  }
+  const meds = Array.from(set);
+  const medsStr = meds.length ? meds.join(', ') : 'Not mentioned';
+  let context = '';
+  if (patientData.complaint && patientData.duration) {
+    context = `${patientData.complaint} for ${patientData.duration}`;
+  } else if (patientData.complaint) {
+    context = patientData.complaint;
+  } else if (meds.length) {
+    context = `Medication evidence present`;
+  }
+  const summary =
+    `Patient Summary:\n` +
+    `- Age/Gender: ${patientData.age}/${patientData.gender}\n` +
+    `- Chief Complaint: ${patientData.complaint}\n` +
+    `- Duration: ${patientData.duration}\n` +
+    `- Relevant Past History: ${patientData.history}\n` +
+    `- Current Medications (inferred): ${medsStr}\n` +
+    `- Key Clinical Context: ${context || 'Not available'}\n` +
+    `- Red Flags: None`;
+  return `[AI-ASSISTED – RULE-BASED MVP]\n${summary}`;
+}
 
 // ROOT
 app.get('/', (req, res) => {
@@ -55,43 +98,67 @@ app.get('/', (req, res) => {
 
 // 1. POST /create-case
 // Handles Patient Input + Image Upload -> OCR -> AI Summary
-app.post('/create-case', upload.single('prescription'), async (req, res) => {
+// Form-data path: handles file upload -> OCR -> AI summary
+app.post('/create-case', upload.array('prescription'), async (req, res) => {
   try {
-    const { age, gender, complaint, duration, history, language } = req.body;
-    const file = req.file;
+    const { name, age, gender, complaint, duration, history, language } = req.body;
+    const files = req.files || [];
 
     console.log(`Received case for ${gender}, ${age}. Lang: ${language}`);
 
     let ocrText = "";
 
-    // Step 1: Perform OCR if file exists
-    if (file) {
-        console.log(`Processing OCR for file: ${file.originalname}`);
-        try {
-            const worker = await createWorker('eng'); 
-            const ret = await worker.recognize(file.path);
-            ocrText = ret.data.text;
-            await worker.terminate();
-        } catch (ocrErr) {
-            console.error("OCR Failed:", ocrErr);
-            ocrText = "[OCR Failed to Process Image]";
-        } finally {
-             // Cleanup temp file
-            if (fs.existsSync(file.path)) {
-                fs.unlinkSync(file.path);
+    // Step 1: Perform OCR if files exist
+    if (Array.isArray(files) && files.length > 0) {
+      const worker = await createWorker('eng');
+      try {
+        const texts = [];
+        for (const f of files) {
+          console.log(`Processing OCR for file: ${f.originalname}`);
+          try {
+            const ret = await worker.recognize(f.path);
+            texts.push(ret.data.text || '');
+          } catch (ocrErr) {
+            console.error("OCR Failed for file:", f.originalname, ocrErr);
+          } finally {
+            if (fs.existsSync(f.path)) {
+              fs.unlinkSync(f.path);
             }
+          }
         }
+        ocrText = texts.filter(Boolean).join('\n\n');
+      } catch (err) {
+        console.error("OCR batch failed:", err);
+      } finally {
+        try { await worker.terminate(); } catch {}
+      }
     }
 
+    // Pass real OCR text or empty string only
+
     // Step 2: AI Summary
-    const aiSummary = generateMockSummary(
-        { age, gender, complaint, duration, history, language }, 
-        ocrText
-    );
+    const normalizedPatient = {
+      name: name ?? '',
+      age: age ?? '',
+      gender: gender ?? '',
+      complaint: complaint ?? '',
+      duration: duration ?? '',
+      history: history ?? '',
+      language: language ?? ''
+    };
+    const aiSummary = await generateAISummary(normalizedPatient, ocrText || '');
 
     const newCase = {
       case_id: crypto.randomUUID(),
-      patient_inputs: { age, gender, complaint, duration, history, language },
+      patient_inputs: { 
+        name: normalizedPatient.name,
+        age: normalizedPatient.age, 
+        gender: normalizedPatient.gender, 
+        complaint: normalizedPatient.complaint, 
+        duration: normalizedPatient.duration, 
+        history: normalizedPatient.history, 
+        language: normalizedPatient.language 
+      },
       ocr_text: ocrText,
       ai_summary: aiSummary,
       doctor_notes: "",
@@ -116,6 +183,50 @@ app.get('/cases', (req, res) => {
   res.json(cases);
 });
 
+// Aliases using /api prefix for Next.js-friendly paths
+app.get('/api/cases', (req, res) => {
+  res.json(cases);
+});
+
+// JSON path: accepts pre-extracted ocrText and patientData
+app.post('/api/create-case', async (req, res) => {
+  try {
+  const { patientData, ocrText } = req.body || {};
+    if (!patientData) {
+      return res.status(400).json({ error: 'Missing patientData' });
+    }
+
+    // Normalize keys from JSON payload (map alternates explicitly)
+    const name = patientData.name ?? '';
+    const age = patientData.age ?? '';
+    const gender = patientData.gender ?? '';
+    const complaint = patientData.complaint ?? patientData.chiefComplaint ?? '';
+    const duration = patientData.duration ?? patientData.symptomDuration ?? '';
+    const history = patientData.history ?? patientData.medicalHistory ?? '';
+    const language = patientData.language ?? '';
+    const text = ocrText || '';
+
+    const normalizedPatient = { name, age, gender, complaint, duration, history, language };
+    const aiSummary = await generateAISummary(normalizedPatient, text);
+
+    const newCase = {
+      case_id: crypto.randomUUID(),
+      patient_inputs: { name, age, gender, complaint, duration, history, language },
+      ocr_text: text,
+      ai_summary: aiSummary,
+      doctor_notes: '',
+      status: 'ready',
+      timestamp: new Date(),
+    };
+
+    cases.push(newCase);
+    res.json({ success: true, case_id: newCase.case_id });
+  } catch (error) {
+    console.error('Error creating case (JSON):', error);
+    res.status(500).json({ error: 'Failed to process case' });
+  }
+});
+
 // 3. POST /doctor-notes
 app.post('/doctor-notes', (req, res) => {
   const { case_id, doctor_notes } = req.body;
@@ -130,5 +241,6 @@ app.post('/doctor-notes', (req, res) => {
 });
 
 app.listen(PORT, () => {
+  console.log(`🔥 EXPRESS SERVER RUNNING ON PORT ${PORT}`);
   console.log(`Server running on http://localhost:${PORT}`);
 });

@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+Nivaaran
+A. Problem Statement :
+India has too few doctors, and doctors spend a large part of each consultation collecting basic patient information.
+This reduces time for diagnosis and care, especially in high-volume clinics.
 
-## Getting Started
+B. Users & Context :
+Primary users- Doctors and clinic staff
+Secondary users - Patients (especially first-time or repeat visitors)
+Context - Busy OPDs, clinics, and hospitals where doctors see many patients daily
 
-First, run the development server:
+C. Solution Overview :
+Nivaaran is a pre-consultation assistant that collects patient symptoms and past prescriptions before the doctor visit and generates a doctor-ready summary.
 
-```bash
+D. Flow :
+Patient → fills details & uploads prescription →
+Nivaaran extracts key information →
+Doctor sees a clean summary before consultation
+
+E. Setup & Run (Local) :
+1. Clone the repository
+2. Install dependencies
+npm install
+3. Start backend
+cd server && npm start
+4. Start frontend
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+5. Open:
+/patient for patient intake
+/doctor for doctor dashboard
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+F. Models & Data :
+1. AI approach - Deterministic, rule-based clinical information extraction (MVP)
+2. Data sources- 
+- Patient-entered data
+- OCR-extracted text from uploaded medical documents
+3. Licenses:
+User-provided data only (no third-party datasets used)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+G. Evaluation & Guardrails :
+1. No diagnosis or treatment recommendations
+2. No hallucination: system only extracts information present in inputs
+3. Clear labeling: “AI-Assisted – Rule-Based MVP”
+4. Original documents always available for doctor verification
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+H. Known Limitations & Risks :
+1. Rule-based extraction may miss uncommon medicine formats
+2. Handwritten prescriptions may reduce OCR accuracy
+3. Not a medical decision system (summary only)
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+I. Solo Team :
+Nishant Pabale – Product, UI/UX, AI logic, frontend & backend
+📧 Contact: (pabalenishant4@gmail.com / @pabalenishant1 / linkedin.com/in/pabalenishant/)
