@@ -148,7 +148,7 @@ export default function DoctorDashboard() {
 
                        {/* Row 2: Demographics & ID */}
                        <div className="flex items-center gap-2 mb-3 text-xs text-slate-500">
-                           <span className="font-semibold">{c.patient_inputs.age} {c.patient_inputs.gender.charAt(0)}</span>
+                           <span className="font-semibold">{c.patient_inputs.age || '--'} {c.patient_inputs.gender.charAt(0)}</span>
                            <span className="text-slate-300">•</span>
                            <span>#{c.case_id.slice(0, 7).toUpperCase()}</span>
                        </div>
@@ -198,7 +198,7 @@ export default function DoctorDashboard() {
                                 {selectedCase.patient_inputs.name || 'Patient'}
                             </h1>
                             <span className="bg-slate-100 text-slate-600 text-xs px-2 py-0.5 rounded font-medium border border-slate-200">
-                                {selectedCase.patient_inputs.age} Years, {selectedCase.patient_inputs.gender}
+                                {selectedCase.patient_inputs.age || '--'} Years, {selectedCase.patient_inputs.gender}
                             </span>
                         </div>
                         <p className="text-xs text-slate-400 mt-1">Case ID: #{selectedCase.case_id.toUpperCase()}</p>

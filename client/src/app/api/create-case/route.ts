@@ -11,10 +11,17 @@ export async function POST(req: Request) {
     // Multipart: forward directly to server /create-case
     if (contentType.includes('multipart/form-data')) {
       const formData = await req.formData();
+      
+      // Create a new FormData to ensure clean state and log values
+      const newFormData = new FormData();
+      for (const [key, value] of formData.entries()) {
+        // console.log(`Forwarding field: ${key} = ${value}`); // Uncomment for debugging
+        newFormData.append(key, value);
+      }
 
       const serverResp = await fetch(`${BACKEND_URL}/create-case`, {
         method: 'POST',
-        body: formData,
+        body: newFormData,
       });
 
       if (!serverResp.ok) {
