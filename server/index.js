@@ -83,7 +83,7 @@ async function generateAISummary(patientData, ocrText) {
     `- Chief Complaint: ${patientData.complaint}\n` +
     `- Duration: ${patientData.duration}\n` +
     `- Relevant Past History: ${patientData.history}\n` +
-    `- Current Medications (inferred): ${medsStr}\n` +
+    `- Medications history (inferred): ${medsStr}\n` +
     `- Key Clinical Context: ${context || 'Not available'}\n` +
     `- Red Flags: None`;
   return `[AI-ASSISTED – RULE-BASED MVP]\n${summary}`;
