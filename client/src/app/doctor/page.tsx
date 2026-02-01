@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { FileText, Save, MoreVertical, User } from 'lucide-react';
+import { BACKEND_URL } from '@/lib/config';
 
 interface PatientCase {
   case_id: string;
@@ -62,7 +63,7 @@ export default function DoctorDashboard() {
     if (!selectedCase) return;
     setIsSaving(true);
     try {
-      const response = await fetch('https://nivaaran-q9op.onrender.com/doctor-notes', {
+      const response = await fetch(`${BACKEND_URL}/doctor-notes`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

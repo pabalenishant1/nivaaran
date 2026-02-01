@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { BACKEND_URL } from '@/lib/config';
 
 // POST /api/create-case
 // Accepts either multipart/form-data (with file) or JSON with { patientData, ocrText }
@@ -11,7 +12,7 @@ export async function POST(req: Request) {
     if (contentType.includes('multipart/form-data')) {
       const formData = await req.formData();
 
-      const serverResp = await fetch('https://nivaaran-q9op.onrender.com/create-case', {
+      const serverResp = await fetch(`${BACKEND_URL}/create-case`, {
         method: 'POST',
         body: formData,
       });
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
 
     // JSON: forward to server /api/create-case
     const json = await req.json();
-    const serverResp = await fetch('https://nivaaran-q9op.onrender.com/api/create-case', {
+    const serverResp = await fetch(`${BACKEND_URL}/api/create-case`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(json),
