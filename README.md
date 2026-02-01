@@ -1,4 +1,4 @@
-# 🩺 Nivaaran
+# Nivaaran
 
 ## Problem Statement
 India has too few doctors, and doctors spend a large part of each consultation collecting basic patient information.  
@@ -35,64 +35,63 @@ Doctor reviews a clean summary before consultation
 
 ## Setup & Run (Local)
 
-### 1. Clone the repository
+1. Clone the repository
 ```bash
 git clone https://github.com/pabalenishant1/nivaaran.git
-cd nivaaran
+cd nivaaran 
+``` 
 2. Install dependencies
+```bash
 npm install
-
+```
 3. Start the backend
+```bash
 cd server
 npm start
+```
 
 4. Start the frontend
+```bash
 npm run dev
+```
 
 5. Open in browser
 
-/patient → Patient intake interface
+``` /patient ``` → Patient intake interface
 
-/doctor → Doctor dashboard
+``` /doctor ``` → Doctor dashboard
 
-Models & Data
+---
 
-AI Approach
+## Models & Data
 
-Deterministic, rule-based clinical information extraction (MVP)
+AI Approach :
+- Deterministic, rule-based clinical information extraction (MVP)
 
-Data Sources
+Data Sources :
+- Patient-entered form data
+- OCR-extracted text from uploaded medical documents
 
-Patient-entered form data
+Licensing :
+- Only user-provided data is used
+- No third-party medical datasets involved
 
-OCR-extracted text from uploaded medical documents
+---
 
-Licensing
+## Evaluation & Guardrails
+- No diagnosis or treatment recommendations
+- No hallucination: only extracts information present in inputs
+- Clear labeling: “AI-Assisted – Rule-Based MVP”
+- Original uploaded documents are always available for doctor verification
 
-Only user-provided data is used
+---
 
-No third-party medical datasets involved
+## Known Limitations & Risks
+- Rule-based extraction may miss uncommon medicine formats
+- Handwritten prescriptions can reduce OCR accuracy
+- Not a medical decision system (summary assistance only)
 
-Evaluation & Guardrails
-
-No diagnosis or treatment recommendations
-
-No hallucination: only extracts information present in inputs
-
-Clear labeling: “AI-Assisted – Rule-Based MVP”
-
-Original uploaded documents are always available for doctor verification
-
-Known Limitations & Risks
-
-Rule-based extraction may miss uncommon medicine formats
-
-Handwritten prescriptions can reduce OCR accuracy
-
-Not a medical decision system (summary assistance only)
-
-Team
-
-Nishant
+## Team (SOLO)
+Nishant Pabale 
 Product · UX · AI Logic · Frontend & Backend
 📧 Contact: (pabalenishant4@gmail.com / linkedin.com/in/pabalenishant )
