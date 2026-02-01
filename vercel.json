@@ -1,0 +1,12 @@
+{
+  "projects": [
+    {
+      "rootDirectory": "client"
+    }
+  ],
+  "rewrites": [
+    { "source": "/", "destination": "/patient" },
+    { "source": "/patient", "destination": "/patient" },
+    { "source": "/doctor", "destination": "/doctor" }
+  ]
+}
